@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="DART 공시를 근거로 자기소개서 방향을 찾는 리서치 도우미" />
+    <title>DART Career — 기업 공시 기반 자소서 리서치</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#">DART<span>Career</span></a>
+      <p>공시에서 찾는 나만의 지원 근거</p>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">EVIDENCE-BASED CAREER RESEARCH</p>
+        <h1>기업의 방향을 읽고,<br /><em>나의 경험</em>을 연결하세요.</h1>
+        <p class="hero-copy">
+          반기·분기보고서 속 사업 변화와 채용공고의 요구 역량을 연결해<br class="desktop-only" />
+          자기소개서에 쓸 수 있는 근거와 방향을 제안합니다.
+        </p>
+      </section>
+
+      <section class="workspace input-workspace" aria-labelledby="workspace-title">
+        <div class="step-indicator" aria-label="진행 단계">
+          <span class="step active">1</span><span class="line"></span>
+          <span class="step">2</span><span class="line"></span>
+          <span class="step">3</span>
+        </div>
+
+        <div class="panel input-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">STEP 01</p>
+              <h2 id="workspace-title">지원 정보를 알려주세요</h2>
+            </div>
+            <span class="status-dot">DART 연동 준비</span>
+          </div>
+
+          <form id="analysis-form">
+            <label for="company">지원 기업</label>
+            <div class="search-wrap">
+              <input id="company" name="company" placeholder="예: 삼성전자" autocomplete="off" required />
+              <button class="search-button" type="button" id="company-search" aria-label="기업 검색">검색</button>
+            </div>
+            <div id="company-result" class="company-result" hidden></div>
+            <div id="company-research" class="company-research" hidden aria-live="polite"></div>
+
+            <label for="role">지원 직무</label>
+            <input id="role" name="role" placeholder="예: 데이터 분석, 백엔드 개발" required />
+
+            <label for="posting">채용공고 내용</label>
+            <textarea id="posting" name="posting" rows="7" placeholder="담당 업무, 자격 요건, 우대 사항이 포함된 채용공고 본문을 붙여 넣어 주세요." required></textarea>
+            <p class="hint">채용 사이트 URL 자동 수집 대신, MVP에서는 본문을 직접 입력합니다.</p>
+
+            <label for="experience">연결할 경험 <span class="optional">선택</span></label>
+            <textarea id="experience" name="experience" rows="5" placeholder="프로젝트, 성과, 문제 해결 경험을 적어주세요. 입력하지 않으면 경험을 찾기 위한 질문을 제안합니다."></textarea>
+            <p class="hint">입력 원문은 DB에 저장하지 않고 분석 결과와 입력 해시만 보관합니다.</p>
+
+            <button class="primary-button" type="submit">
+              <span>공시 기반 분석 시작</span><span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <section class="principles">
+        <article><span>01</span><h3>공시 기반</h3><p>회사가 직접 제출한 최신 보고서를 중심으로 분석합니다.</p></article>
+        <article><span>02</span><h3>직무 연결</h3><p>채용공고의 요구 역량과 사업 과제를 함께 살펴봅니다.</p></article>
+        <article><span>03</span><h3>근거 확인</h3><p>사실과 해석을 구분하고 원문 출처로 돌아갈 수 있습니다.</p></article>
+      </section>
+    </main>
+
+    <footer>본 서비스의 결과는 작성 방향을 위한 참고 자료이며 회사의 공식 채용 기준이 아닙니다.</footer>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="DART 공시 기반 지원 전략 분석 결과" />
+    <title>분석 결과 — DART Career</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="analysis.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">DART<span>Career</span></a>
+      <a class="header-link" href="/">새 분석</a>
+    </header>
+
+    <main class="result-page">
+      <nav class="result-nav" aria-label="분석 단계">
+        <a href="/">1. 지원 정보</a><span>→</span><strong>2. 분석 결과</strong>
+      </nav>
+
+      <section id="loading-state" class="result-loading" aria-live="polite">
+        <span class="loader" aria-hidden="true"></span>
+        <p class="eyebrow">ANALYZING</p>
+        <h1>공시와 채용공고를 연결하고 있습니다</h1>
+        <p id="loading-message">최신 보고서에서 직무와 관련된 근거를 선별하는 중입니다.</p>
+        <div class="loading-steps">
+          <span class="active">공시 근거 선별</span><span>채용 요구 분석</span><span>작성 방향 생성</span>
+        </div>
+      </section>
+
+      <section id="error-state" class="result-error" hidden aria-live="assertive">
+        <p class="eyebrow">ANALYSIS FAILED</p>
+        <h1>분석을 완료하지 못했습니다</h1>
+        <p id="error-message"></p>
+        <div class="result-actions"><button id="retry-button" class="primary-action">다시 시도</button><a href="/">입력 수정</a></div>
+      </section>
+
+      <div id="result-content" hidden>
+        <header class="result-header">
+          <div><p class="eyebrow">EVIDENCE-BASED ANALYSIS</p><h1><span id="result-company"></span> 지원 전략</h1><p id="result-meta"></p></div>
+          <a class="secondary-action" href="/">새 분석</a>
+        </header>
+
+        <section class="summary-card"><span>핵심 요약</span><p id="job-summary"></p></section>
+
+        <div class="result-layout">
+          <article class="result-main">
+            <section class="result-section"><div class="section-title"><span>01</span><div><h2>기업이 향하는 방향</h2><p>최근 공시에서 확인한 사업 방향을 정리했습니다.</p></div></div><div id="company-insights"></div></section>
+            <section class="result-section"><div class="section-title"><span>02</span><div><h2>직무와 기업의 연결점</h2><p>지원 동기에 사용할 수 있는 논리를 정리했습니다.</p></div></div><div id="connections"></div></section>
+            <section class="result-section"><div class="section-title"><span>03</span><div><h2>자기소개서 작성 방향</h2><p>경험을 꺼내기 위한 질문과 핵심 메시지입니다.</p></div></div><div id="directions"></div></section>
+          </article>
+
+          <aside class="evidence-panel">
+            <div class="evidence-sticky"><p class="eyebrow">DART EVIDENCE</p><h2>사용한 근거</h2><p>분석에 사용한 공시 내용과 원문을 여기에서 확인할 수 있습니다.</p><div id="sources"></div></div>
+          </aside>
+        </div>
+        <p id="result-disclaimer" class="result-disclaimer"></p>
+      </div>
+    </main>
+  </body>
+</html>
