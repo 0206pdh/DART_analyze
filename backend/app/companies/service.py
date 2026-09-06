@@ -9,6 +9,16 @@ from app.companies.models import CompanyProfileRecord, DocumentCacheRecord, Fili
 from app.dart import DartClient
 from app.dart.parsers import extract_document_sections
 
+# 자소서 리서치에 쓰이는 서술형 섹션만 보관한다. 재무제표 표(재무에 관한 사항)는
+# 구조화된 재무 API로 따로 수집하므로 제외해 저장 용량을 줄인다.
+STORED_SECTION_TERMS = ("회사의개요", "사업의내용", "경영진단")
+STORED_SECTION_CHAR_LIMIT = 50_000
+
+
+def _is_stored_section(title: str) -> bool:
+    normalized = title.replace(" ", "")
+    return any(term in normalized for term in STORED_SECTION_TERMS)
+
 
 class CompanyResearchService:
     def __init__(self, session: Session, dart: DartClient | None, cache_dir: Path) -> None:
@@ -53,7 +63,9 @@ class CompanyResearchService:
         statement = select(FilingRecord).where(FilingRecord.corp_code == corp_code).order_by(FilingRecord.receipt_date.desc())
         return list(self._session.scalars(statement))
 
-    def cache_and_extract(self, receipt_number: str) -> tuple[DocumentCacheRecord, list[FilingSectionRecord]]:
+    def cache_and_extract(
+        self, receipt_number: str, *, store_archive: bool = True
+    ) -> tuple[DocumentCacheRecord, list[FilingSectionRecord]]:
         existing = self._session.get(DocumentCacheRecord, receipt_number)
         if existing is not None:
             sections = list(self._session.scalars(
@@ -67,14 +79,17 @@ class CompanyResearchService:
             raise RuntimeError("DART 클라이언트가 필요한 작업입니다.")
         content = self._dart.download_document(receipt_number)
         extracted = extract_document_sections(content)
-        self._cache_dir.mkdir(parents=True, exist_ok=True)
-        target = self._cache_dir / f"{receipt_number}.zip"
-        temporary = target.with_suffix(".tmp")
-        temporary.write_bytes(content)
-        temporary.replace(target)
+        relative_path = ""
+        if store_archive:
+            self._cache_dir.mkdir(parents=True, exist_ok=True)
+            target = self._cache_dir / f"{receipt_number}.zip"
+            temporary = target.with_suffix(".tmp")
+            temporary.write_bytes(content)
+            temporary.replace(target)
+            relative_path = target.name
         record = DocumentCacheRecord(
             receipt_number=receipt_number,
-            relative_path=target.name,
+            relative_path=relative_path,
             sha256=sha256(content).hexdigest(),
             byte_size=len(content),
             cached_at=datetime.now(UTC),
@@ -86,10 +101,11 @@ class CompanyResearchService:
                 receipt_number=receipt_number,
                 section_order=section.order,
                 title=section.title,
-                text=section.text,
+                text=section.text[:STORED_SECTION_CHAR_LIMIT],
                 source_element_id=section.source_element_id,
             )
             for section in extracted
+            if _is_stored_section(section.title)
         ]
         self._session.add_all(sections)
         self._session.commit()

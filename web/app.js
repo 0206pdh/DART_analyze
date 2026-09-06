@@ -183,7 +183,7 @@ async function loadFinancialSummary(corpCode, businessYear, reportCode) {
       return;
     }
     container.innerHTML = `
-      <div class="financial-heading"><small>주요 재무정보</small><span>${businessYear} · ${data.financial_statement_division === "CFS" ? "연결" : "개별"}</span></div>
+      <div class="financial-heading"><small>주요 재무정보</small><span>${data.business_year || businessYear} · ${data.financial_statement_division === "CFS" ? "연결" : "개별"}</span></div>
       <div class="metric-grid">
         ${data.metrics.map((metric) => `
           <div class="metric-item">

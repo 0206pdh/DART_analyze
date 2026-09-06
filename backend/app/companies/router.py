@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.companies.financials import FinancialService
 from app.companies.repository import CompanyRepository
-from app.companies.models import FilingRecord
+from app.companies.models import CompanyProfileRecord, FilingRecord
 from app.companies.schemas import (
     CompanyProfileResponse,
     CompanyResearchResponse,
@@ -27,10 +27,18 @@ from app.database import get_session
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 
 
-def get_dart_client() -> Generator[DartClient, None, None]:
+def get_dart_client() -> Generator[DartClient | None, None, None]:
     settings = Settings.from_env()
+    if settings.read_only or not settings.dart_api_key:
+        yield None
+        return
     with DartClient(settings.dart_api_key, base_url=settings.dart_base_url, timeout=settings.dart_timeout_seconds) as client:
         yield client
+
+
+def require_write_enabled() -> None:
+    if Settings.from_env().read_only:
+        raise HTTPException(status_code=403, detail="읽기 전용 모드에서는 사용할 수 없는 기능입니다.")
 
 
 @router.get("/search", response_model=CompanySearchResponse)
@@ -63,22 +71,33 @@ def get_company(corp_code: str, session: Session = Depends(get_session)) -> Comp
 def refresh_company_research(
     corp_code: str,
     session: Session = Depends(get_session),
-    dart: DartClient = Depends(get_dart_client),
+    dart: DartClient | None = Depends(get_dart_client),
 ) -> CompanyResearchResponse:
     company_record = CompanyRepository(session).get(corp_code)
     if company_record is None:
         raise HTTPException(status_code=404, detail="회사를 찾을 수 없습니다.")
-    profile, filings = CompanyResearchService(session, dart, Settings.from_env().document_cache_dir).refresh_company(corp_code)
+    settings = Settings.from_env()
+    service = CompanyResearchService(session, dart, settings.document_cache_dir)
+    if settings.read_only:
+        profile = session.get(CompanyProfileRecord, corp_code)
+        filings = service.get_filings(corp_code)
+        if profile is None and not filings:
+            raise HTTPException(
+                status_code=409,
+                detail="아직 준비되지 않은 기업입니다. 현재는 주요 상장사만 지원합니다.",
+            )
+    else:
+        profile, filings = service.refresh_company(corp_code)
     return CompanyResearchResponse(
         profile=CompanyProfileResponse(
             corp_code=corp_code,
             corp_name=company_record.corp_name,
             stock_code=company_record.stock_code,
-            ceo_name=profile.ceo_name,
-            corporation_type=profile.corporation_type,
-            industry_code=profile.industry_code,
-            established_date=profile.established_date,
-            accounting_month=profile.accounting_month,
+            ceo_name=profile.ceo_name if profile else None,
+            corporation_type=profile.corporation_type if profile else None,
+            industry_code=profile.industry_code if profile else None,
+            established_date=profile.established_date if profile else None,
+            accounting_month=profile.accounting_month if profile else None,
         ),
         filings=[_filing_response(record) for record in filings],
     )
@@ -95,11 +114,11 @@ def get_company_filings(corp_code: str, session: Session = Depends(get_session))
     ).get_filings(corp_code)]
 
 
-@router.post("/filings/{receipt_number}/extract", response_model=DocumentExtractionResponse)
+@router.post("/filings/{receipt_number}/extract", response_model=DocumentExtractionResponse, dependencies=[Depends(require_write_enabled)])
 def extract_filing(
     receipt_number: str,
     session: Session = Depends(get_session),
-    dart: DartClient = Depends(get_dart_client),
+    dart: DartClient | None = Depends(get_dart_client),
 ) -> DocumentExtractionResponse:
     if not receipt_number.isdigit() or len(receipt_number) != 14:
         raise HTTPException(status_code=422, detail="접수번호는 14자리 숫자여야 합니다.")
@@ -126,11 +145,17 @@ def refresh_financials(
     business_year: Annotated[str, Query(pattern=r"^\d{4}$")],
     report_code: Annotated[str, Query(pattern=r"^1101[1-4]$")],
     session: Session = Depends(get_session),
-    dart: DartClient = Depends(get_dart_client),
+    dart: DartClient | None = Depends(get_dart_client),
 ) -> FinancialSummaryResponse:
     if CompanyRepository(session).get(corp_code) is None:
         raise HTTPException(status_code=404, detail="회사를 찾을 수 없습니다.")
-    records = FinancialService(session, dart).refresh(corp_code, business_year, report_code)
+    service = FinancialService(session, dart)
+    if Settings.from_env().read_only:
+        records = service.get(corp_code, business_year, report_code) or service.get_latest(corp_code)
+        if records:
+            business_year, report_code = records[0].business_year, records[0].report_code
+    else:
+        records = service.refresh(corp_code, business_year, report_code)
     return _financial_response(corp_code, business_year, report_code, records)
 
 

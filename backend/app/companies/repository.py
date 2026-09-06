@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 import re
 
 from sqlalchemy import case, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
@@ -85,10 +86,11 @@ class CompanyRepository:
             for company in companies
         ]
         dialect = self._session.bind.dialect.name if self._session.bind else ""
+        insert_builder = {"sqlite": sqlite_insert, "postgresql": pg_insert}.get(dialect)
         for start in range(0, len(values), batch_size):
             batch = values[start:start + batch_size]
-            if dialect == "sqlite":
-                statement = sqlite_insert(CompanyRecord).values(batch)
+            if insert_builder is not None:
+                statement = insert_builder(CompanyRecord).values(batch)
                 statement = statement.on_conflict_do_update(
                     index_elements=[CompanyRecord.corp_code],
                     set_={

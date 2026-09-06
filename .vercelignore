@@ -1,0 +1,17 @@
+.venv/
+.git/
+.env
+data/
+docs/
+backend/tests/
+backend/scripts/
+backend/migrations/
+alembic.ini
+.agents/
+.claude/
+skills-lock.json
+*.db
+*.db-*
+*.log
+__pycache__/
+.pytest_cache/

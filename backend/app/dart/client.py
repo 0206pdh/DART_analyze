@@ -176,6 +176,8 @@ class DartClient:
             raise DartResponseError("OpenDART 요청 시간이 초과되었습니다.") from exc
         except httpx.HTTPStatusError as exc:
             raise DartResponseError(f"OpenDART HTTP 오류: {exc.response.status_code}") from exc
+        except httpx.TransportError as exc:
+            raise DartResponseError(f"OpenDART 연결 오류: {type(exc).__name__}") from exc
         return response
 
     @staticmethod

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 def create_analysis(
     request: AnalysisRequest,
     session: Session = Depends(get_session),
-    dart: DartClient = Depends(get_dart_client),
+    dart: DartClient | None = Depends(get_dart_client),
 ) -> AnalysisResponse:
     settings = Settings.from_env()
     if settings.openai_api_key is None:
@@ -40,6 +40,11 @@ def create_analysis(
             .limit(1)
         )
         if section_exists is None:
+            if settings.read_only:
+                raise HTTPException(
+                    status_code=409,
+                    detail="아직 분석 데이터가 준비되지 않은 기업입니다. 현재는 주요 상장사만 지원합니다.",
+                )
             research = CompanyResearchService(session, dart, settings.document_cache_dir)
             filings = research.get_filings(request.corp_code)
             if not filings:

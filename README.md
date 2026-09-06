@@ -58,6 +58,48 @@ python backend/scripts/dart_smoke.py
 pytest
 ```
 
+## Supabase(무료) + 읽기 전용 배포 준비
+
+배포 런타임은 DART를 호출하지 않는다. 6개월 주기로 로컬/CI에서 시가총액 상위 상장사만
+미리 수집해 Postgres에 넣고, 서버는 그 데이터만 읽는다.
+
+### 1. 데이터 적재 (로컬 또는 CI, 6개월 주기)
+
+```powershell
+python -m pip install -e ".[dev,preload]"
+
+# .env 의 DATABASE_URL 을 Supabase Session pooler(5432)로 설정.
+#   postgresql+psycopg://postgres.<ref>:<PW>@aws-N-<region>.pooler.supabase.com:5432/postgres
+#   (비밀번호에 @ 등 기호가 있으면 %40 처럼 URL 인코딩. Direct 연결 db.<ref>... 는
+#    IPv6 전용이라 부하 시 끊기므로 pooler 를 쓴다.)
+
+python -m alembic upgrade head
+python backend/scripts/sync_companies.py            # 회사 원장 12만 건(검색용)
+python backend/scripts/preload_listed.py --top 1000 # 시총 상위 1000개 공시·재무
+```
+
+프리로드는 중단해도 안전하며 재실행 시 이미 채운 기업은 건너뛴다. 연결이 끊기면 기업별로
+3회 재시도한다. OpenDART 일일 한도(020) 초과 시 종료 코드 2로 멈추므로 24시간 뒤 다시 실행한다.
+종목 목록은 기본적으로 FinanceDataReader로 받고, `--marketcap-csv` / `--codes-file` 로 대체 가능.
+저장 섹션은 `회사의 개요`·`사업의 내용`·`경영진단`만 섹션당 5만 자로 잘라 보관한다.
+
+### 2. Vercel 배포 (최초 1회 연결 후 git push 시 자동)
+
+Vercel Python 런타임이 루트 `index.py` 의 `app` 을 자동 감지해 서버리스 함수로 실행하고
+모든 요청을 FastAPI 로 보낸다(FastAPI 가 `/api/*` 와 정적 `web/` 를 함께 서빙). 별도
+`vercel.json` 은 없다. `.python-version`(3.12), `.vercelignore`, `pyproject.toml` 로 구성.
+
+Vercel 대시보드에서 GitHub 레포를 Import 하고 환경변수를 설정한다.
+
+| 변수 | 값 |
+|---|---|
+| `DATABASE_URL` | Supabase **Transaction pooler(6543)** 문자열 (`...pooler.supabase.com:6543/postgres`, 스킴 `postgresql+psycopg://`) |
+| `OPENAI_API_KEY` | 분석 생성용 |
+| `READ_ONLY` | `true` |
+
+`DART_API_KEY` 는 배포 서버에 넣지 않는다. 코드가 `:6543` 을 감지하면 커넥션 풀을 끄고
+prepared statement 를 비활성화한다(`app/database.py`).
+
 ## 구현 시작 전 필요한 것
 
 - OpenDART 인증키 (`DART_API_KEY`로 서버 환경변수에만 보관)

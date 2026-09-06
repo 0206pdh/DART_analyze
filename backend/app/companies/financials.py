@@ -78,6 +78,17 @@ class FinancialService:
             FinancialMetricRecord.report_code == report_code,
         ).order_by(FinancialMetricRecord.id)))
 
+    def get_latest(self, corp_code: str) -> list[FinancialMetricRecord]:
+        period = self._session.execute(
+            select(FinancialMetricRecord.business_year, FinancialMetricRecord.report_code)
+            .where(FinancialMetricRecord.corp_code == corp_code)
+            .order_by(FinancialMetricRecord.business_year.desc(), FinancialMetricRecord.report_code.desc())
+            .limit(1)
+        ).first()
+        if period is None:
+            return []
+        return self.get(corp_code, period.business_year, period.report_code)
+
 
 def _find_account(accounts: list[FinancialAccount], definition: MetricDefinition) -> FinancialAccount | None:
     candidates = [account for account in accounts if account.statement_division == definition.statement_division]

@@ -9,3 +9,9 @@ data/*.db
 data/*.db-*
 data/*.sqlite*
 data/documents/
+
+# AI 에이전트 스킬 (로컬 개발 보조, 앱 코드 아님)
+.agents/
+.claude/
+skills-lock.json
+*.log

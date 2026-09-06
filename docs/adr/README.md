@@ -23,6 +23,7 @@ ADR은 중요한 선택과 당시의 근거를 보존한다. 구현과 결정이
 | [0015](0015-openai-model-and-responses-api.md) | GPT-5.4 mini와 Responses API 구조화 출력 | 채택 |
 | [0016](0016-analysis-privacy-and-cost-boundaries.md) | 모델 전송량과 저장 범위 최소화 | 채택 |
 | [0017](0017-synchronous-analysis-execution.md) | Phase 2 분석 동기 처리 | 채택 |
+| [0018](0018-supabase-vercel-readonly-deployment.md) | Supabase + Vercel 읽기 전용, 상위 상장사 프리로드 | 채택 |
 
 ## 아직 결정하지 않은 항목
 
@@ -30,7 +31,6 @@ ADR은 중요한 선택과 당시의 근거를 보존한다. 구현과 결정이
 |---|---|---|
 | 보고서 검색 | 원문 파싱 평가 후 | 섹션/키워드 검색, PostgreSQL FTS, 임베딩 검색 |
 | 인증 | 사용자 문서 저장 직전 | 익명 로컬, 이메일 링크, OAuth |
-| 배포 플랫폼 | 첫 공개 배포 직전 | 운영비, 서울 리전, 비밀관리, DB 지원 기준 비교 |
 
 미결정 항목은 구현 직전에 ADR을 추가한다. 후보를 평가하지 않고 라이브러리부터 설치하지 않는다.
 
