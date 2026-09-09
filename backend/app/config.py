@@ -14,6 +14,7 @@ class Settings:
     openai_api_key: str | None
     openai_model: str
     openai_max_output_tokens: int
+    openai_timeout_seconds: float
     analysis_max_source_chars: int
     database_url: str
     document_cache_dir: Path
@@ -34,6 +35,7 @@ class Settings:
             openai_api_key=openai_key or None,
             openai_model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini").strip() or "gpt-5.4-mini",
             openai_max_output_tokens=int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "3000")),
+            openai_timeout_seconds=float(os.getenv("OPENAI_TIMEOUT_SECONDS", "35")),
             analysis_max_source_chars=int(os.getenv("ANALYSIS_MAX_SOURCE_CHARS", "40000")),
             database_url=database_url,
             document_cache_dir=cache_dir,

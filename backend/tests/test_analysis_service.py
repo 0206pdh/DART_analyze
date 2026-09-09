@@ -20,7 +20,11 @@ from app.database import Base
 class FakeProvider:
     model = "fake-model"
 
+    def __init__(self) -> None:
+        self.calls = 0
+
     def generate(self, payload: dict[str, object]) -> Generation:
+        self.calls += 1
         source_id = payload["evidence"][0]["source_id"]  # type: ignore[index]
         return Generation(result=GeneratedAnalysis(
             job_summary="백엔드 서비스 개발 역할",
@@ -42,12 +46,18 @@ def test_analysis_is_grounded_and_persisted_without_raw_input() -> None:
         session.commit()
 
         request = AnalysisRequest(corp_code="00126380", role="백엔드", job_posting="API 개발과 서비스 운영 경험이 필요합니다.", experience="대규모 API를 개선했습니다.")
-        response = AnalysisService(session, FakeProvider(), 40000).analyze(request)
+        provider = FakeProvider()
+        service = AnalysisService(session, provider, 40000)
+        response = service.analyze(request)
+        cached_response = service.analyze(request)
         stored = session.get(__import__("app.companies.models", fromlist=["AnalysisRunRecord"]).AnalysisRunRecord, response.analysis_id)
         assert response.result.company_insights[0].source_ids[0].startswith("DART:")
         assert stored is not None
         assert "대규모 API" not in stored.result_json
         assert len(stored.input_hash) == 64
+        assert cached_response.analysis_id == response.analysis_id
+        assert cached_response.cached is True
+        assert provider.calls == 1
 
 
 def test_unknown_citations_remove_grounded_claims() -> None:

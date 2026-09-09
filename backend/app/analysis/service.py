@@ -1,6 +1,8 @@
 import hashlib
 import json
+from collections import defaultdict
 from dataclasses import dataclass
+from threading import Lock
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -77,6 +79,15 @@ class AnalysisService:
         return AnalysisContext(company=company, sources=sources)
 
     def analyze(self, request: AnalysisRequest) -> AnalysisResponse:
+        digest = _request_digest(request)
+        lock = _analysis_lock(digest)
+        with lock:
+            cached = self._get_cached(request, digest)
+            if cached is not None:
+                return cached
+            return self._analyze_uncached(request, digest)
+
+    def _analyze_uncached(self, request: AnalysisRequest, digest: str) -> AnalysisResponse:
         context = self.build_context(request.corp_code)
         if not context.sources:
             raise RuntimeError("분석할 공시 근거가 없습니다. 먼저 기업 공시와 원문을 수집해 주세요.")
@@ -90,9 +101,6 @@ class AnalysisService:
         generation = self._provider.generate(payload)
         result = validate_citations(generation.result, {source.source_id for source in context.sources})
         analysis_id = str(uuid4())
-        digest = hashlib.sha256(
-            f"{request.corp_code}\0{request.role}\0{request.job_posting}\0{request.experience or ''}".encode()
-        ).hexdigest()
         self._session.add(AnalysisRunRecord(
             id=analysis_id,
             corp_code=request.corp_code,
@@ -114,6 +122,52 @@ class AnalysisService:
             sources=context.sources,
             disclaimer="공시 기반 참고 분석이며 회사의 공식 채용 기준이나 합격을 보장하지 않습니다.",
         )
+
+    def _get_cached(self, request: AnalysisRequest, digest: str) -> AnalysisResponse | None:
+        record = self._session.scalar(
+            select(AnalysisRunRecord)
+            .where(
+                AnalysisRunRecord.corp_code == request.corp_code,
+                AnalysisRunRecord.role == request.role,
+                AnalysisRunRecord.input_hash == digest,
+                AnalysisRunRecord.model == self._provider.model,
+            )
+            .order_by(AnalysisRunRecord.created_at.desc())
+            .limit(1)
+        )
+        company = self._session.get(CompanyRecord, request.corp_code)
+        if record is None or company is None:
+            return None
+        try:
+            result = GeneratedAnalysis.model_validate_json(record.result_json)
+            sources = [EvidenceSource.model_validate(item) for item in json.loads(record.sources_json)]
+        except (ValueError, TypeError):
+            return None
+        return AnalysisResponse(
+            analysis_id=record.id,
+            company_name=company.corp_name,
+            role=record.role,
+            model=record.model,
+            result=result,
+            sources=sources,
+            disclaimer="공시 기반 참고 분석이며 회사의 공식 채용 기준이나 합격을 보장하지 않습니다.",
+            cached=True,
+        )
+
+
+def _request_digest(request: AnalysisRequest) -> str:
+    return hashlib.sha256(
+        f"{request.corp_code}\0{request.role}\0{request.job_posting}\0{request.experience or ''}".encode()
+    ).hexdigest()
+
+
+_LOCK_GUARD = Lock()
+_ANALYSIS_LOCKS: defaultdict[str, Lock] = defaultdict(Lock)
+
+
+def _analysis_lock(key: str) -> Lock:
+    with _LOCK_GUARD:
+        return _ANALYSIS_LOCKS[key]
 
 
 def validate_citations(result: GeneratedAnalysis, allowed: set[str]) -> GeneratedAnalysis:

@@ -53,8 +53,16 @@
             <input id="role" name="role" placeholder="예: 데이터 분석, 백엔드 개발" required />
 
             <label for="posting">채용공고 내용</label>
+            <div class="posting-import">
+              <div class="import-url-row">
+                <input id="posting-url" type="url" placeholder="채용공고 URL을 붙여 넣으세요" aria-label="채용공고 URL" />
+                <button id="posting-url-import" class="file-button" type="button">URL 가져오기</button>
+              </div>
+              <label class="file-button file-input-label" for="posting-file">파일 열기</label>
+              <input id="posting-file" type="file" accept=".txt,.md,.markdown,.html,.htm,.pdf,.docx,text/plain,text/html,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
+            </div>
             <textarea id="posting" name="posting" rows="7" placeholder="담당 업무, 자격 요건, 우대 사항이 포함된 채용공고 본문을 붙여 넣어 주세요." required></textarea>
-            <p class="hint">채용 사이트 URL 자동 수집 대신, MVP에서는 본문을 직접 입력합니다.</p>
+            <p id="posting-import-status" class="hint" aria-live="polite">본문을 직접 붙여 넣거나 URL·파일에서 가져올 수 있습니다. 가져온 내용은 제출 전에 수정할 수 있습니다.</p>
 
             <label for="experience">연결할 경험 <span class="optional">선택</span></label>
             <textarea id="experience" name="experience" rows="5" placeholder="프로젝트, 성과, 문제 해결 경험을 적어주세요. 입력하지 않으면 경험을 찾기 위한 질문을 제안합니다."></textarea>

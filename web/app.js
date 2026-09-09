@@ -2,8 +2,12 @@ const companyInput = document.querySelector("#company");
 const companySearch = document.querySelector("#company-search");
 const companyResult = document.querySelector("#company-result");
 const form = document.querySelector("#analysis-form");
+const postingUrl = document.querySelector("#posting-url");
+const postingUrlImport = document.querySelector("#posting-url-import");
+const postingFile = document.querySelector("#posting-file");
+const postingImportStatus = document.querySelector("#posting-import-status");
 const companySearchState = { query: "", offset: 0, total: 0, loading: false };
-const previousRequest = JSON.parse(sessionStorage.getItem("dartCareerAnalysisRequest") || "null");
+const previousRequest = readSessionJson("dartCareerAnalysisRequest");
 
 if (previousRequest) {
   companyInput.value = previousRequest.company_name || "";
@@ -27,6 +31,8 @@ companyResult.addEventListener("scroll", () => {
 });
 
 companySearch.addEventListener("click", searchCompanies);
+postingUrlImport.addEventListener("click", importPostingFromUrl);
+postingFile.addEventListener("change", importPostingFromFile);
 companyInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -71,9 +77,9 @@ function renderCompanyResults(results, page, append) {
   }
   const rows = results.map((company, index) => `
     <button class="company-option" type="button"
-      data-corp-code="${company.corp_code}">
+      data-corp-code="${escapeHtml(company.corp_code)}">
       <span><strong>${escapeHtml(company.corp_name)}</strong><small>DART ${company.corp_code}</small></span>
-      <span class="stock-code">${company.stock_code}</span>
+      <span class="stock-code">${escapeHtml(company.stock_code || "")}</span>
     </button>
   `).join("");
 
@@ -220,6 +226,71 @@ function escapeHtml(value) {
   const element = document.createElement("span");
   element.textContent = String(value);
   return element.innerHTML;
+}
+
+async function importPostingFromUrl() {
+  const url = postingUrl.value.trim();
+  if (!url) {
+    postingUrl.focus();
+    return;
+  }
+  setPostingImportState(true, "URL에서 채용공고 본문을 가져오는 중입니다.");
+  try {
+    const response = await fetch("/api/job-postings/from-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = await parseResponse(response);
+    if (!response.ok) throw new Error(data.detail || `URL 가져오기 실패 (${response.status})`);
+    form.elements.posting.value = data.text;
+    setPostingImportState(false, `URL에서 ${data.character_count.toLocaleString()}자 가져왔습니다. 내용을 확인하고 수정해 주세요.`);
+  } catch (error) {
+    setPostingImportState(false, error.message);
+  }
+}
+
+async function importPostingFromFile() {
+  const file = postingFile.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append("file", file);
+  setPostingImportState(true, `${file.name}에서 본문을 읽는 중입니다.`);
+  try {
+    const response = await fetch("/api/job-postings/from-file", { method: "POST", body: formData });
+    const data = await parseResponse(response);
+    if (!response.ok) throw new Error(data.detail || `파일 가져오기 실패 (${response.status})`);
+    form.elements.posting.value = data.text;
+    setPostingImportState(false, `${file.name}에서 ${data.character_count.toLocaleString()}자 가져왔습니다. 내용을 확인하고 수정해 주세요.`);
+  } catch (error) {
+    setPostingImportState(false, error.message);
+  } finally {
+    postingFile.value = "";
+  }
+}
+
+function setPostingImportState(loading, message) {
+  postingUrlImport.disabled = loading;
+  postingFile.disabled = loading;
+  postingImportStatus.textContent = message;
+  postingImportStatus.classList.toggle("error", !loading && message.includes("실패"));
+}
+
+async function parseResponse(response) {
+  try {
+    return await response.json();
+  } catch {
+    return { detail: "서버가 올바른 응답을 반환하지 않았습니다." };
+  }
+}
+
+function readSessionJson(key) {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) || "null");
+  } catch {
+    sessionStorage.removeItem(key);
+    return null;
+  }
 }
 
 form.addEventListener("submit", (event) => {

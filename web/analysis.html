@@ -19,12 +19,12 @@
         <a href="/">1. 지원 정보</a><span>→</span><strong>2. 분석 결과</strong>
       </nav>
 
-      <section id="loading-state" class="result-loading" aria-live="polite">
+      <section id="loading-state" class="result-loading" aria-live="polite" aria-busy="true">
         <span class="loader" aria-hidden="true"></span>
         <p class="eyebrow">ANALYZING</p>
         <h1>공시와 채용공고를 연결하고 있습니다</h1>
         <p id="loading-message">최신 보고서에서 직무와 관련된 근거를 선별하는 중입니다.</p>
-        <div class="loading-steps">
+        <div class="loading-steps" role="list">
           <span class="active">공시 근거 선별</span><span>채용 요구 분석</span><span>작성 방향 생성</span>
         </div>
       </section>
@@ -39,7 +39,12 @@
       <div id="result-content" hidden>
         <header class="result-header">
           <div><p class="eyebrow">EVIDENCE-BASED ANALYSIS</p><h1><span id="result-company"></span> 지원 전략</h1><p id="result-meta"></p></div>
-          <a class="secondary-action" href="/">새 분석</a>
+          <div class="result-tools">
+            <button id="copy-markdown" class="secondary-action" type="button">Markdown 복사</button>
+            <button id="download-markdown" class="secondary-action" type="button">MD 저장</button>
+            <button id="export-pdf" class="secondary-action" type="button">PDF 저장</button>
+            <a class="secondary-action" href="/">새 분석</a>
+          </div>
         </header>
 
         <section class="summary-card"><span>핵심 요약</span><p id="job-summary"></p></section>
@@ -49,6 +54,7 @@
             <section class="result-section"><div class="section-title"><span>01</span><div><h2>기업이 향하는 방향</h2><p>최근 공시에서 확인한 사업 방향을 정리했습니다.</p></div></div><div id="company-insights"></div><div id="investment-focus"></div></section>
             <section class="result-section"><div class="section-title"><span>02</span><div><h2>직무와 기업의 연결점</h2><p>지원 동기에 사용할 수 있는 논리를 정리했습니다.</p></div></div><div id="connections"></div></section>
             <section class="result-section"><div class="section-title"><span>03</span><div><h2>자기소개서 작성 방향</h2><p>경험을 꺼내기 위한 질문과 핵심 메시지입니다.</p></div></div><div id="directions"></div></section>
+            <section id="cautions-section" class="result-section caution-section" hidden><div class="section-title"><span>!</span><div><h2>읽기 전 주의사항</h2><p>분석 결과를 자기소개서에 활용하기 전에 확인하세요.</p></div></div><div id="cautions"></div></section>
           </article>
 
           <aside class="evidence-panel">
