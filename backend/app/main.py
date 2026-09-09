@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app.auth_router import router as auth_router
 from app.companies.router import router as companies_router
 from app.analysis.router import router as analysis_router
 from app.config import Settings
@@ -10,6 +11,7 @@ from app.job_postings.router import router as job_postings_router
 
 
 app = FastAPI(title="DART Career API", version="0.1.0")
+app.include_router(auth_router)
 app.include_router(companies_router)
 app.include_router(analysis_router)
 app.include_router(job_postings_router)

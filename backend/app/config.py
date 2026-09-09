@@ -18,6 +18,7 @@ class Settings:
     analysis_max_source_chars: int
     database_url: str
     document_cache_dir: Path
+    session_secret: str | None = None
     read_only: bool = False
     dart_base_url: str = "https://opendart.fss.or.kr"
     dart_timeout_seconds: float = 10.0
@@ -39,5 +40,6 @@ class Settings:
             analysis_max_source_chars=int(os.getenv("ANALYSIS_MAX_SOURCE_CHARS", "40000")),
             database_url=database_url,
             document_cache_dir=cache_dir,
+            session_secret=os.getenv("APP_SESSION_SECRET", "").strip() or None,
             read_only=os.getenv("READ_ONLY", "").strip().lower() in {"1", "true", "yes", "on"},
         )

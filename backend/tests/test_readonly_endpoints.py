@@ -19,6 +19,7 @@ from app.main import app
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv("READ_ONLY", "true")
+    monkeypatch.setenv("APP_SESSION_SECRET", "test-session-secret")
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
@@ -35,7 +36,9 @@ def client(monkeypatch):
             yield session
 
     app.dependency_overrides[get_session] = override_session
-    yield TestClient(app)
+    test_client = TestClient(app)
+    assert test_client.get("/api/auth/session").status_code == 200
+    yield test_client
     app.dependency_overrides.clear()
 
 

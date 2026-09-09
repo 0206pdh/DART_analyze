@@ -6,6 +6,7 @@ let analysisInFlight = false;
 let progressTimer = null;
 let latestData = null;
 const generatedDrafts = {};
+const sessionReady = ensureSession();
 
 document.querySelector("#retry-button").addEventListener("click", () => {
   sessionStorage.removeItem(resultKey);
@@ -30,6 +31,7 @@ async function runAnalysis() {
   if (analysisInFlight || !request) return;
   analysisInFlight = true;
   showLoading();
+  await sessionReady;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
   try {
@@ -146,6 +148,7 @@ async function generateDraft(index, direction, button) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
   try {
+    await sessionReady;
     const response = await fetch("/api/analyses/draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -258,6 +261,15 @@ function requestSignature(value) {
 
 function readSessionJson(key) {
   try { return JSON.parse(sessionStorage.getItem(key) || "null"); } catch { sessionStorage.removeItem(key); return null; }
+}
+
+async function ensureSession() {
+  try {
+    const response = await fetch("/api/auth/session", { credentials: "same-origin" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 function sourceDomId(value) { return `source-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`; }

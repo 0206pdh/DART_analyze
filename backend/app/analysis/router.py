@@ -12,10 +12,11 @@ from app.companies.service import CompanyResearchService
 from app.companies.router import get_dart_client
 from app.dart import DartClient
 from app.database import get_session
+from app.security import enforce_api_protection
 from sqlalchemy import select
 
 
-router = APIRouter(prefix="/api/analyses", tags=["analyses"])
+router = APIRouter(prefix="/api/analyses", tags=["analyses"], dependencies=[Depends(enforce_api_protection)])
 
 
 @router.post("", response_model=AnalysisResponse)

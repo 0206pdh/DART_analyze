@@ -105,3 +105,10 @@ prepared statement 를 비활성화한다(`app/database.py`).
 - OpenDART 인증키 (`DART_API_KEY`로 서버 환경변수에만 보관)
 - 생성형 AI 공급자와 모델 결정
 - MVP에서 지원할 채용공고 입력 예시 3~5개
+
+공개 API 보호를 위해 Vercel 환경변수에 `APP_SESSION_SECRET`도 설정한다. 로컬에서 새 값을
+만들려면 다음 명령을 사용한다.
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```

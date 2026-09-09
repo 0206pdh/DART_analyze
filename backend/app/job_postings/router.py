@@ -1,10 +1,11 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.analysis.schemas import JobPostingImportResponse, JobPostingUrlRequest
 from app.job_postings.service import JobPostingImportError, MAX_TEXT_CHARS, extract_text, import_from_url
+from app.security import enforce_api_protection
 
 
-router = APIRouter(prefix="/api/job-postings", tags=["job-postings"])
+router = APIRouter(prefix="/api/job-postings", tags=["job-postings"], dependencies=[Depends(enforce_api_protection)])
 
 
 @router.post("/from-url", response_model=JobPostingImportResponse)

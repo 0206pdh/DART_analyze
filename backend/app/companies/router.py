@@ -22,9 +22,10 @@ from app.companies.service import CompanyResearchService
 from app.config import Settings
 from app.dart import DartClient
 from app.database import get_session
+from app.security import enforce_api_protection
 
 
-router = APIRouter(prefix="/api/companies", tags=["companies"])
+router = APIRouter(prefix="/api/companies", tags=["companies"], dependencies=[Depends(enforce_api_protection)])
 
 
 def get_dart_client() -> Generator[DartClient | None, None, None]:

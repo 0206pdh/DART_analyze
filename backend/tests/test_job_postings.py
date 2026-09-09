@@ -2,7 +2,11 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
+from app.database import Base, get_session
 from app.job_postings.service import extract_text
 from app.main import app
 
@@ -27,12 +31,26 @@ def test_extracts_docx_text() -> None:
     assert text == "Data analysis job posting."
 
 
-def test_file_import_endpoint_returns_editable_text() -> None:
-    client = TestClient(app)
-    response = client.post(
-        "/api/job-postings/from-file",
-        files={"file": ("posting.txt", "Backend developer job posting with API operations experience.", "text/plain")},
-    )
+def test_file_import_endpoint_returns_editable_text(monkeypatch) -> None:
+    monkeypatch.setenv("APP_SESSION_SECRET", "test-session-secret")
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+
+    def override_session():
+        with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_session
+    try:
+        client = TestClient(app)
+        assert client.get("/api/auth/session").status_code == 200
+        response = client.post(
+            "/api/job-postings/from-file",
+            files={"file": ("posting.txt", "Backend developer job posting with API operations experience.", "text/plain")},
+        )
+    finally:
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     assert "Backend developer" in response.json()["text"]

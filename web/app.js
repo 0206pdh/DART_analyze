@@ -8,6 +8,7 @@ const postingFile = document.querySelector("#posting-file");
 const postingImportStatus = document.querySelector("#posting-import-status");
 const companySearchState = { query: "", offset: 0, total: 0, loading: false };
 const previousRequest = readSessionJson("dartCareerAnalysisRequest");
+const sessionReady = ensureSession();
 
 if (previousRequest) {
   companyInput.value = previousRequest.company_name || "";
@@ -41,6 +42,7 @@ companyInput.addEventListener("keydown", (event) => {
 });
 
 async function searchCompanies() {
+  await sessionReady;
   const name = companyInput.value.trim();
   if (!name) {
     companyInput.focus();
@@ -132,6 +134,7 @@ async function loadMoreCompanies() {
 }
 
 async function loadCompanyResearch(corpCode) {
+  await sessionReady;
   const research = document.querySelector("#company-research");
   research.hidden = false;
   research.innerHTML = '<p class="search-message">기업개황과 최근 정기공시를 불러오고 있습니다.</p>';
@@ -177,6 +180,7 @@ function getFinancialPeriod(filing) {
 }
 
 async function loadFinancialSummary(corpCode, businessYear, reportCode) {
+  await sessionReady;
   const container = document.querySelector("#financial-summary");
   container.innerHTML = '<p class="search-message">주요 재무정보를 불러오고 있습니다.</p>';
   try {
@@ -290,6 +294,15 @@ function readSessionJson(key) {
   } catch {
     sessionStorage.removeItem(key);
     return null;
+  }
+}
+
+async function ensureSession() {
+  try {
+    const response = await fetch("/api/auth/session", { credentials: "same-origin" });
+    return response.ok;
+  } catch {
+    return false;
   }
 }
 
