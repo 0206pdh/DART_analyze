@@ -173,6 +173,8 @@ footer { padding: 25px; border-top: 1px solid var(--line); color: var(--muted); 
 .result-item p { margin: 7px 0; color: #444; line-height: 1.7; font-size: 14px; }
 .result-item small { display: block; color: var(--muted); line-height: 1.6; }
 .keyword-line { color: var(--muted) !important; font-size: 12px !important; }
+.focus-heading { margin: 22px 0 2px; font-size: 12px; letter-spacing: .04em; color: var(--green); font-weight: 800; }
+.focus-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 10px; background: var(--soft); color: var(--muted); font-size: 11px; font-weight: 700; vertical-align: middle; }
 .kind.fact { background: #e8eee9; color: #435247; }
 .kind.inference { background: #eeeae4; color: #665a49; }
 .citation-list { margin-top: 9px; }

@@ -122,6 +122,11 @@ def validate_citations(result: GeneratedAnalysis, allowed: set[str]) -> Generate
         insight.statement = insight.statement[:300]
         insight.source_ids = [source_id for source_id in insight.source_ids if source_id in allowed]
     result.company_insights = [item for item in result.company_insights if item.source_ids][:3]
+    for focus in result.investment_focus:
+        focus.area = focus.area[:40]
+        focus.detail = focus.detail[:200]
+        focus.source_ids = [source_id for source_id in focus.source_ids if source_id in allowed]
+    result.investment_focus = [item for item in result.investment_focus if item.source_ids][:2]
     for connection in result.connections:
         connection.company_context = connection.company_context[:300]
         connection.connection = connection.connection[:300]

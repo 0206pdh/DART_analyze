@@ -4,7 +4,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.analysis.provider import Generation
-from app.analysis.schemas import AnalysisRequest, CompanyInsight, GeneratedAnalysis, RequirementConnection, WritingDirection
+from app.analysis.schemas import (
+    AnalysisRequest,
+    CompanyInsight,
+    GeneratedAnalysis,
+    InvestmentFocus,
+    RequirementConnection,
+    WritingDirection,
+)
 from app.analysis.service import AnalysisService, validate_citations
 from app.companies.models import CompanyRecord, FilingRecord, FilingSectionRecord
 from app.database import Base
@@ -18,6 +25,7 @@ class FakeProvider:
         return Generation(result=GeneratedAnalysis(
             job_summary="백엔드 서비스 개발 역할",
             company_insights=[CompanyInsight(kind="fact", statement="클라우드 사업을 확대한다.", source_ids=[source_id])],
+            investment_focus=[InvestmentFocus(kind="inference", area="클라우드 인프라", detail="클라우드 사업 확대에 자원을 집중한다.", source_ids=[source_id])],
             connections=[RequirementConnection(requirement="API 개발", company_context="클라우드", connection="확장성 경험 강조", source_ids=[source_id])],
             writing_directions=[WritingDirection(title="확장성", core_message="성장 기여", experience_prompt="트래픽 개선 경험은?", source_ids=[source_id])],
             cautions=[],
@@ -46,9 +54,12 @@ def test_unknown_citations_remove_grounded_claims() -> None:
     result = GeneratedAnalysis(
         job_summary="요약",
         company_insights=[CompanyInsight(kind="fact", statement="근거 없음", source_ids=["FAKE"])],
+        investment_focus=[InvestmentFocus(kind="fact", area="근거 없는 영역", detail="근거 없음", source_ids=["FAKE"])],
         connections=[], writing_directions=[], cautions=[],
     )
-    assert validate_citations(result, {"DART:1"}).company_insights == []
+    checked = validate_citations(result, {"DART:1"})
+    assert checked.company_insights == []
+    assert checked.investment_focus == []
 
 
 def test_result_size_is_bounded() -> None:
@@ -56,6 +67,7 @@ def test_result_size_is_bounded() -> None:
     result = GeneratedAnalysis(
         job_summary="요" * 250,
         company_insights=[CompanyInsight(kind="fact", statement="사" * 400, source_ids=[source_id]) for _ in range(5)],
+        investment_focus=[InvestmentFocus(kind="fact", area="영" * 80, detail="상" * 400, source_ids=[source_id]) for _ in range(5)],
         connections=[RequirementConnection(requirement="역량", company_context="맥" * 400, connection="연" * 400, source_ids=[source_id]) for _ in range(5)],
         writing_directions=[WritingDirection(title="방향", core_message="핵" * 400, experience_prompt="질" * 400, source_ids=[source_id]) for _ in range(5)],
         cautions=["주의"] * 4,
@@ -63,6 +75,9 @@ def test_result_size_is_bounded() -> None:
     bounded = validate_citations(result, {source_id})
     assert len(bounded.job_summary) == 200
     assert len(bounded.company_insights) == 3
+    assert len(bounded.investment_focus) == 2
+    assert len(bounded.investment_focus[0].area) == 40
+    assert len(bounded.investment_focus[0].detail) == 200
     assert len(bounded.connections) == 3
     assert len(bounded.writing_directions) == 3
     assert len(bounded.cautions) == 2

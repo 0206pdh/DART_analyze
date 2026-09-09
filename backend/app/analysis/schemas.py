@@ -30,9 +30,17 @@ class WritingDirection(BaseModel):
     source_ids: list[str]
 
 
+class InvestmentFocus(BaseModel):
+    kind: Literal["fact", "inference"]
+    area: str
+    detail: str
+    source_ids: list[str]
+
+
 class GeneratedAnalysis(BaseModel):
     job_summary: str
     company_insights: list[CompanyInsight]
+    investment_focus: list[InvestmentFocus]
     connections: list[RequirementConnection]
     writing_directions: list[WritingDirection]
     cautions: list[str]

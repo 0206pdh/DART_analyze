@@ -46,6 +46,12 @@ function renderAnalysis(data) {
 
   document.querySelector("#company-insights").innerHTML = data.result.company_insights.map((item) => `
     <div class="result-item"><p>${escapeHtml(item.statement)}</p></div>`).join("");
+
+  const investmentFocus = data.result.investment_focus || [];
+  document.querySelector("#investment-focus").innerHTML = investmentFocus.length
+    ? `<h3 class="focus-heading">투자·R&amp;D 집중 영역</h3>` + investmentFocus.map((item) => `
+      <div class="result-item"><p><strong>${escapeHtml(item.area)}</strong> — ${escapeHtml(item.detail)} <span class="focus-tag">${item.kind === "fact" ? "공시 확인" : "추론"}</span></p></div>`).join("")
+    : "";
   document.querySelector("#connections").innerHTML = data.result.connections.map((item) => `
     <div class="result-item connection-item"><h3>${escapeHtml(item.requirement)}</h3><p>${escapeHtml(item.connection)}</p><small>${escapeHtml(item.company_context)}</small></div>`).join("");
   document.querySelector("#directions").innerHTML = data.result.writing_directions.map((item, index) => `
