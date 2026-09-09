@@ -1,0 +1,11 @@
+# Vercel Python 런타임 의존성. pyproject.toml [project.dependencies] 와 동기화.
+# dev/preload extras 는 배포 런타임에 불필요하므로 제외.
+alembic>=1.16,<2
+fastapi>=0.116,<1
+httpx>=0.28,<1
+lxml>=6,<7
+openai>=1.99,<3
+psycopg[binary]>=3.2,<4
+python-dotenv>=1.1,<2
+sqlalchemy>=2.0,<3
+uvicorn[standard]>=0.35,<1
